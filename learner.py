@@ -59,7 +59,7 @@ class Learner:
 
     def save(self, dir_name="./model"):
         torch.save(self.model.state_dict(), f"{dir_name}/mnist_cnn.pt")
-    
+
     def load(self):
         pass
 
@@ -77,9 +77,9 @@ if __name__ == "__main__":
         batch_size=64, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
         datasets.MNIST('../data', train=False, transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])),
         batch_size=64, shuffle=True, **kwargs)
 
     learner = Learner(train_loader, test_loader)
