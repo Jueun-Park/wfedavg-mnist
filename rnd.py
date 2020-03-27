@@ -1,14 +1,16 @@
 from numpy import array, clip, sqrt
-import torch
-from torch.utils.data import TensorDataset, DataLoader
 import pickle
 import os
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
+
 from running_mean_std import RunningMeanStd
 from net import target_generator, predictor_generator
 
 
 class RandomNetworkDistillation:
-    def __init__(self, log_interval=10, lr=1e-5, use_cuda=False):
+    def __init__(self, log_interval=10, lr=1e-5, use_cuda=False, verbose=0, log_tensorboard=False):
         self.predictor = predictor_generator()
         self.target = target_generator()
         for param in self.target.parameters():
@@ -25,6 +27,10 @@ class RandomNetworkDistillation:
         self.predictor.to(self.device)
 
         self.running_stats = RunningMeanStd()
+
+        self.verbose = verbose
+        self.writer = SummaryWriter() if log_tensorboard else None
+        self.n_iter = 0
 
     def set_data(self, train_tensor, test_tensor):
         train_target_tensor = self.target(train_tensor)
@@ -50,11 +56,15 @@ class RandomNetworkDistillation:
             loss = self.loss_function(output, target)
             loss.backward(retain_graph=True)
             self.optimizer.step()
-            if batch_idx % self.log_interval == 0:
+            self.n_iter += 1
+            self.running_stats.update(arr=array([loss.item()]))
+
+            if self.verbose > 0 and batch_idx % self.log_interval == 0:
                 print(
                     f"Train Epoch: {epoch} [{batch_idx*len(data)}/{len(self.train_loader.dataset)} ({100. * batch_idx/len(self.train_loader):.0f}%)]", end="\t")
                 print(f"Loss: {loss.item():.6f}")
-            self.running_stats.update(arr=array([loss.item()]))
+            if self.writer is not None and self.n_iter % 100 == 0:
+                self.writer.add_scalar("Loss/train", loss.item(), self.n_iter)
         return
 
     def _test(self):
@@ -66,10 +76,12 @@ class RandomNetworkDistillation:
                 output = self.predictor(data)
                 test_loss += self.loss_function(output, target).item()
         test_loss /= len(self.test_loader.dataset)
-        print(f"\nTest set: Average loss: {test_loss:.4f}\n")
+        if self.verbose > 0:
+            print(f"\nTest set: Average loss: {test_loss:.4f}\n")
+        if self.writer is not None:
+            self.writer.add_scalar("Loss/test", test_loss, self.n_iter)
         return test_loss
 
-    # TODO: test
     def get_intrinsic_reward(self, x: torch.Tensor):
         x = x.to(self.device)
         predict = self.predictor(x)
