@@ -1,3 +1,4 @@
+from pathlib import Path
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -58,7 +59,9 @@ class Learner:
             100. * correct / len(self.test_loader.dataset)))
 
     def save(self, dir_name="./model"):
-        torch.save(self.model.state_dict(), f"{dir_name}/mnist_cnn.pt")
+        Path(dir_name).mkdir(parents=True, exist_ok=True)
+        file_path = f"{dir_name}/mnist_cnn.pt"
+        torch.save(self.model.state_dict(), file_path)
 
     def load(self):
         pass

@@ -1,19 +1,17 @@
 import numpy as np
 import torch
-from torchvision import datasets
-from torch.utils.data import TensorDataset, DataLoader
+from torchvision import datasets, transforms
+from torch.utils.data import TensorDataset, DataLoader, Subset
+
+from learner import Learner
 
 
-def array_to_dataloader(x, y):
-    tensor_x = torch.Tensor(x)
-    tensor_y = torch.Tensor(y)
-    dataset = TensorDataset(tensor_x, tensor_y)
-    return DataLoader(dataset)
 
-
-def load_and_split_data():
-    train_set = datasets.MNIST('./data', train=True, download=True)
-    test_set = datasets.MNIST('./data', train=False, download=True)
+def load_and_split_mnist_dataset():
+    train_set = datasets.MNIST('./data', train=True, download=True, transform=transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
+    test_set = datasets.MNIST('./data', train=False, download=True,  transform=transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
 
     x_train = train_set.data.numpy()
     y_train = train_set.targets.numpy()
@@ -21,23 +19,33 @@ def load_and_split_data():
     x_valid = test_set.data.numpy()
     y_valid = test_set.targets.numpy()
 
-    train_x_arrs = {}
-    train_y_arrs = {}
+    train_dataset = {}
     for i in range(10):
-        train_x_arrs[i] = x_train[y_train == i]
-        train_y_arrs[i] = np.full(shape=(x_train.shape[0]), fill_value=i)
+        train_dataset[i] = Subset(train_set, *np.where(y_train == i))
+        print(np.where(y_train == i)[0].shape)
 
-    valid_x_arrs = {}
-    valid_y_arrs = {}
+    valid_dataset = {}
     for i in range(10):
-        valid_x_arrs[i] = x_valid[y_valid == i]
-        valid_y_arrs[i] = np.full(shape=(x_valid.shape[0]), fill_value=i)
+        valid_dataset[i] = Subset(test_set, *np.where(y_valid == i))
+        print(np.where(y_valid == i)[0].shape)
 
-    return train_x_arrs, train_y_arrs, valid_x_arrs, valid_y_arrs
+    return train_dataset, valid_dataset
 
 
 if __name__ == "__main__":
-    txa, tya, vxa, vya = load_and_split_data()
+    use_cuda = False
+    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+
+    td, vd = load_and_split_mnist_dataset()
+    train_dataloaders = {}
+    valid_dataloaders = {}
     for i in range(10):
-        print(txa[i].shape, tya[i].shape, vxa[i].shape, vya[i].shape)
-        # print(array_to_dataloader(txa[i], tya[i]))
+        train_dataloaders[i] = DataLoader(
+            td[i], batch_size=64, shuffle=True, **kwargs)
+        valid_dataloaders[i] = DataLoader(
+            vd[i], batch_size=64, shuffle=True, **kwargs)
+
+    for i in range(10):
+        learner = Learner(train_dataloaders[i], valid_dataloaders[i])
+        learner.learn(10)
+        learner.save(f"./model/subenv_{i}")
