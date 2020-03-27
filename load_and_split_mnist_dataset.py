@@ -6,7 +6,6 @@ from torch.utils.data import TensorDataset, DataLoader, Subset
 from learner import Learner
 
 
-
 def load_and_split_mnist_dataset():
     train_set = datasets.MNIST('./data', train=True, download=True, transform=transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
