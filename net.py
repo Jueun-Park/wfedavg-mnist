@@ -27,3 +27,28 @@ class Net(nn.Module):
         x = self.fc2(x)
         output = F.log_softmax(x, dim=1)
         return output
+
+
+def target_generator(): return torch.nn.Sequential(
+    torch.nn.Flatten(1, 2),  # 0 dim: batch size
+    torch.nn.Linear(784, 64),
+    torch.nn.Linear(64, 128),
+    torch.nn.Linear(128, 64)
+)
+
+
+def predictor_generator(): return torch.nn.Sequential(
+    torch.nn.Flatten(1, 2),
+    torch.nn.Linear(784, 64),
+    torch.nn.Linear(64, 128),
+    torch.nn.Linear(128, 128),
+    torch.nn.Linear(128, 64)
+)
+
+
+if __name__ == "__main__":
+    target = target_generator()
+    predictor = predictor_generator()
+    x = torch.randn((128, 28, 28))
+    print(target(x).shape)
+    print(predictor(x).shape)

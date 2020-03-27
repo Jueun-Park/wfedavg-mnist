@@ -1,36 +1,24 @@
+from numpy import array
 import torch
-import numpy as np
+from torch.utils.data import TensorDataset, DataLoader
 import pickle
 import os
-from tensorboardX import SummaryWriter
 from running_mean_std import RunningMeanStd
+from net import target_generator, predictor_generator
 
 
-class RandomNetworkDistillation():
-    def __init__(self, input_size=8, learning_late=1e-4, verbose=1, use_cuda=False, tensorboard=True):
-        self.target = torch.nn.Sequential(
-            torch.nn.Linear(input_size, 64),
-            torch.nn.Linear(64, 128),
-            torch.nn.Linear(128, 64)
-        )
-
-        self.predictor = torch.nn.Sequential(
-            torch.nn.Linear(input_size, 64),
-            torch.nn.Linear(64, 128),
-            torch.nn.Linear(128, 128),
-            torch.nn.Linear(128, 64)
-        )
-
-        self.loss_function = torch.nn.MSELoss(reduction='mean')
-        self.optimizer = torch.optim.Adam(
-            self.predictor.parameters(), lr=learning_late)
+class RandomNetworkDistillation:
+    def __init__(self, log_interval=10, lr=1e-5, use_cuda=False):
+        self.predictor = predictor_generator()
+        self.target = target_generator()
         for param in self.target.parameters():
             param.requires_grad = False
-        self.verbose = verbose
-        self.tensorboard = tensorboard
-        if self.tensorboard:
-            self.summary = SummaryWriter()
-        self.iteration = 0
+        self.target.eval()
+
+        self.log_interval = log_interval
+        self.optimizer = torch.optim.Adam(
+            self.predictor.parameters(), lr=lr)
+        self.loss_function = torch.nn.MSELoss(reduction='mean')
 
         self.device = torch.device('cuda' if use_cuda else 'cpu')
         self.target.to(self.device)
@@ -38,54 +26,48 @@ class RandomNetworkDistillation():
 
         self.running_stats = RunningMeanStd()
 
-    def learn(self, x, n_steps=500):
-        intrinsic_reward = self.get_intrinsic_reward(x[0])
-        if self.tensorboard:
-            self.summary.add_scalar(
-                'intrinsic-reward', intrinsic_reward, self.iteration)
-        x = np.float32(x)
-        x = torch.from_numpy(x).to(self.device)
-        y_train = self.target(x)
-        for t in range(n_steps):
-            y_pred = self.predictor(x)
-            loss = self.loss_function(y_pred, y_train)
-            if t % 100 == 99:
-                if self.verbose > 0:
-                    print("timesteps: {}, loss: {}".format(t, loss.item()))
-            self.optimizer.zero_grad()
+    def set_data(self, train_tensor, test_tensor):
+        train_target_tensor = self.target(train_tensor)
+        train_dataset = TensorDataset(train_tensor, train_target_tensor)
+        self.train_loader = DataLoader(train_dataset)
+
+        test_target_tensor = self.target(test_tensor)
+        test_dataset = TensorDataset(test_tensor, test_target_tensor)
+        self.test_loader = DataLoader(test_dataset)
+        return
+
+    def learn(self, epochs):
+        for epoch in range(epochs):
+            self._train(epoch)
+            test_loss = self._test()
+        return test_loss
+
+    def _train(self, epoch):
+        self.predictor.train()
+        for batch_idx, (data, target) in enumerate(self.train_loader):
+            data, target = data.to(self.device), target.to(self.device)
+            output = self.predictor(data)
+            loss = self.loss_function(output, target)
             loss.backward(retain_graph=True)
             self.optimizer.step()
-            if self.tensorboard:
-                self.summary.add_scalar(
-                    'loss/loss', loss.item(), self.iteration)
-            self.iteration += 1
-        self.running_stats.update(arr=np.array([loss.item()]))
-        if self.tensorboard:
-            self.summary.add_scalar('loss/running-mean',
-                                    self.running_stats.mean, self.iteration)
-            self.summary.add_scalar(
-                'loss/running-var', self.running_stats.var, self.iteration)
+            if batch_idx % self.log_interval == 0:
+                print(
+                    f"Train Epoch: {epoch} [{batch_idx*len(data)}/{len(self.train_loader.dataset)} ({100. * batch_idx/len(self.train_loader):.0f}%)]", end="\t")
+                print(f"Loss: {loss.item():.6f}")
+            self.running_stats.update(arr=array([loss.item()]))
+        return
 
-    def evaluate(self, x):
-        x = np.float32(x)
-        x = torch.from_numpy(x).to(self.device)
-        y_test = self.target(x)
-        y_pred = self.predictor(x)
-        loss = self.loss_function(y_pred, y_test)
-        print("evaluation loss: {}".format(loss.item()))
-        return loss.item()
-
-    def get_intrinsic_reward(self, x):
-        x = np.float32(x)
-        x = torch.from_numpy(x).to(self.device)
-        predict = self.predictor(x)
-        target = self.target(x)
-        intrinsic_reward = self.loss_function(
-            predict, target).data.cpu().numpy()
-        intrinsic_reward = (
-            intrinsic_reward - self.running_stats.mean) / np.sqrt(self.running_stats.var)
-        intrinsic_reward = np.clip(intrinsic_reward, -5, 5)
-        return intrinsic_reward
+    def _test(self):
+        self.predictor.eval()
+        test_loss = 0
+        with torch.no_grad():
+            for data, target in self.test_loader:
+                data, target = data.to(self.device), target.to(self.device)
+                output = self.predictor(data)
+                test_loss += self.loss_function(output, target).item()
+        test_loss /= len(self.test_loader.dataset)
+        print(f"\nTest set: Average loss: {test_loss:.4f}\n")
+        return test_loss
 
     def save(self, path="rnd_model/", subfix=None):
         if not os.path.isdir(path):
@@ -100,6 +82,7 @@ class RandomNetworkDistillation():
                    "{}/target{}.pt".format(path, subfix))
         torch.save(self.predictor.state_dict(),
                    "{}/predictor{}.pt".format(path, subfix))
+        return
 
     def load(self, path="rnd_model/", subfix=None):
         if subfix is not None:
@@ -112,7 +95,12 @@ class RandomNetworkDistillation():
             "{}/target{}.pt".format(path, subfix), map_location=torch.device(self.device)))
         self.predictor.load_state_dict(torch.load(
             "{}/predictor{}.pt".format(path, subfix), map_location=torch.device(self.device)))
+        return
 
-    def set_to_inference(self):
-        self.target.eval()
-        self.predictor.eval()
+
+if __name__ == "__main__":
+    train_x = torch.randn((64, 28, 28))
+    test_x = torch.randn((32, 28, 28))
+    rnd = RandomNetworkDistillation(log_interval=50)
+    rnd.set_data(train_x, test_x)
+    rnd.learn(25)
