@@ -1,4 +1,4 @@
-from numpy import array
+from numpy import array, clip, sqrt
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 import pickle
@@ -69,6 +69,18 @@ class RandomNetworkDistillation:
         print(f"\nTest set: Average loss: {test_loss:.4f}\n")
         return test_loss
 
+    # TODO: test
+    def get_intrinsic_reward(self, x: torch.Tensor):
+        x = x.to(self.device)
+        predict = self.predictor(x)
+        target = self.target(x)
+        intrinsic_reward = self.loss_function(
+            predict, target).data.cpu().numpy()
+        intrinsic_reward = (
+            intrinsic_reward - self.running_stats.mean) / sqrt(self.running_stats.var)
+        intrinsic_reward = clip(intrinsic_reward, -5, 5)
+        return intrinsic_reward
+
     def save(self, path="rnd_model/", subfix=None):
         if not os.path.isdir(path):
             os.mkdir(path)
@@ -104,3 +116,5 @@ if __name__ == "__main__":
     rnd = RandomNetworkDistillation(log_interval=50)
     rnd.set_data(train_x, test_x)
     rnd.learn(25)
+    x = torch.randn((1, 28, 28))
+    print(rnd.get_intrinsic_reward(x))
