@@ -20,11 +20,11 @@ class Learner:
 
     def learn(self, epochs):
         for epoch in range(epochs):
-            self.train(epoch)
-            self.test()
+            self._train(epoch)
+            self._test()
             self.scheduler.step()
 
-    def train(self, epoch):
+    def _train(self, epoch):
         log_interval = 10
         self.model.train()
         for batch_idx, (data, target) in enumerate(self.train_loader):
@@ -40,7 +40,7 @@ class Learner:
                     len(data), len(self.train_loader.dataset),
                     100. * batch_idx / len(self.train_loader), loss.item()))
 
-    def test(self):
+    def _test(self):
         self.model.eval()
         test_loss = 0
         correct = 0
