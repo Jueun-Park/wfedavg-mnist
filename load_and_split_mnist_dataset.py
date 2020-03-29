@@ -45,6 +45,9 @@ def load_and_split_mnist_tensor():
 
     train_x_tensors = {}
     train_y_tensors = {}
+
+    x_train = x_train[:, np.newaxis, :]  # add channel dim
+    x_valid = x_valid[:, np.newaxis, :]  # add channel dim
     for i in range(10):
         train_x_tensors[i] = torch.Tensor(x_train[y_train == i])
         train_y_tensors[i] = np.full(shape=(x_train.shape[0]), fill_value=i)

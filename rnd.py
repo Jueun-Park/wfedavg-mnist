@@ -123,10 +123,10 @@ class RandomNetworkDistillation:
 
 
 if __name__ == "__main__":
-    train_x = torch.randn((64, 28, 28))
-    test_x = torch.randn((32, 28, 28))
-    rnd = RandomNetworkDistillation(log_interval=50)
+    train_x = torch.randn((64, 1, 28, 28))
+    test_x = torch.randn((32, 1, 28, 28))
+    rnd = RandomNetworkDistillation(log_interval=50, verbose=1)
     rnd.set_data(train_x, test_x)
     rnd.learn(25)
-    x = torch.randn((1, 28, 28))
+    x = torch.randn((1, 1, 28, 28))
     print(rnd.get_intrinsic_reward(x))

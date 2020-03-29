@@ -30,19 +30,24 @@ class Net(nn.Module):
 
 
 def target_generator(): return torch.nn.Sequential(
-    torch.nn.Flatten(1, 2),  # 0 dim: batch size
-    torch.nn.Linear(784, 64),
-    torch.nn.Linear(64, 128),
-    torch.nn.Linear(128, 64)
+    torch.nn.Conv2d(1, 32, 3),
+    torch.nn.ReLU(),
+    torch.nn.Conv2d(32, 64, 3),
+    torch.nn.ReLU(),
+    torch.nn.MaxPool2d(2),
+    torch.nn.Dropout2d(0.25),
+    torch.nn.Flatten(1, 2),
 )
 
 
 def predictor_generator(): return torch.nn.Sequential(
+    torch.nn.Conv2d(1, 32, 3),
+    torch.nn.ReLU(),
+    torch.nn.Conv2d(32, 64, 3),
+    torch.nn.ReLU(),
+    torch.nn.MaxPool2d(2),
+    torch.nn.Dropout2d(0.25),
     torch.nn.Flatten(1, 2),
-    torch.nn.Linear(784, 64),
-    torch.nn.Linear(64, 128),
-    torch.nn.Linear(128, 128),
-    torch.nn.Linear(128, 64)
 )
 
 
