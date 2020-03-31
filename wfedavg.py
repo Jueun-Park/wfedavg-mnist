@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -20,9 +21,13 @@ def weights_gen(base_index=0):
 #     for i in range(0, 8, 2):
 #         yield str(i)+"-"+str(i+4)
 
-
-base_index = 3
+test_on_base = False
+base_index = 0
+test_index = 2
+if test_on_base:
+    test_index = base_index
 alpha = 0.5
+test_on_full_dataset = False
 
 if __name__ == "__main__":
     td, vd = load_and_split_mnist_dataset()
@@ -51,6 +56,22 @@ if __name__ == "__main__":
         del learner
     test_losses = []
     labels = []
+    if test_on_full_dataset:
+        use_cuda = False
+        kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+        train_loader = torch.utils.data.DataLoader(
+            datasets.MNIST('../data', train=True, download=True,
+                        transform=transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize((0.1307,), (0.3081,))
+                        ])),
+            batch_size=64, shuffle=True, **kwargs)
+        test_loader = torch.utils.data.DataLoader(
+            datasets.MNIST('../data', train=False, transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))
+            ])),
+            batch_size=64, shuffle=True, **kwargs)
     for w in weights_gen(base_index=base_index):
         print(w)
         for key in keys:
@@ -66,13 +87,16 @@ if __name__ == "__main__":
         model.load_state_dict(base_parameter_dict)
         # eval weighted model
         model.eval()
-        learner = Learner(DataLoader(
-            td[base_index]), DataLoader(vd[base_index]))
+        if test_on_full_dataset:
+            learner = Learner(train_loader, test_loader)
+        else:
+            learner = Learner(DataLoader(
+                td[test_index]), DataLoader(vd[test_index]))
         learner.model = model
         test_losses.append(learner._test())
         labels.append(f"{w[base_index]:.2f}")
     # draw graph
-    plt.title(f"WFedAvg: base model index={base_index}, alpha={alpha}")
+    plt.title(f"WFedAvg: base model index={base_index}, test dataset index={test_index}, alpha={alpha}, full dataset test={test_on_full_dataset}")
     plt.bar(labels, test_losses)
     plt.xlabel("base model weight")
     plt.ylabel("test loss")
