@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torchvision import datasets, transforms
-from torch.utils.data import TensorDataset, DataLoader, Subset
+from torch.utils.data import TensorDataset, DataLoader, Subset, Dataset
 
 from learner import Learner
 
@@ -59,3 +59,42 @@ def load_and_split_mnist_tensor():
         valid_y_tensors[i] = np.full(shape=(x_valid.shape[0]), fill_value=i)
 
     return train_x_tensors, train_y_tensors, valid_x_tensors, valid_y_tensors
+
+
+def concat_data(index_list, mode="dataset"):
+    """make concatenated data from sliced data
+    :param index_list: indices you want to concat
+    :param mode: return mode "dataset" or "tensor"
+    :return: concatenated dataset or tensor
+    """
+    if mode == "dataset":
+        td, vd = load_and_split_mnist_dataset()
+        result_t = td[index_list[0]]
+        result_v = td[index_list[0]]
+        index_list = index_list[1:]
+        for i in index_list:
+            result_t += td[i]
+            result_v += vd[i]
+    elif mode == "tensor":
+        tx, ty, vx, vy = load_and_split_mnist_tensor()
+        for i in index_list:
+            pass  # TODO
+    else:
+        return None
+    return result_t, result_v
+
+
+if __name__ == "__main__":
+    import time
+    td, vd = concat_data([1, 2, 3, 4])
+    learner = Learner(DataLoader(td, batch_size=64, shuffle=True, num_workers=4), DataLoader(
+        vd, batch_size=64, shuffle=True, num_workers=4), log_interval=100, lr=0.005)
+
+    st = time.time()
+    learner.learn(2)
+    print(f"total time: {time.time() - st}")
+
+    td, vd = concat_data([3, 4, 5, 6])
+    learner.test_loader = DataLoader(
+        vd, batch_size=64, shuffle=True, num_workers=4)
+    learner._test()

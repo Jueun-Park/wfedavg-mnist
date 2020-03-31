@@ -1,15 +1,19 @@
+from datetime import datetime
+import os
 from pathlib import Path
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import StepLR
+from torch.utils.tensorboard import SummaryWriter
+from pytorchtools import EarlyStopping
 
 
 from net import Net
 
 
 class Learner:
-    def __init__(self, train_loader, test_loader, lr=1.0, device="cpu"):
+    def __init__(self, train_loader, test_loader, lr=1.0, device="cpu", log_interval=10, tensorboard=False, tensorboard_comment=""):
         self.model = Net()
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -17,6 +21,17 @@ class Learner:
         self.optimizer = optim.Adadelta(self.model.parameters(), lr=lr)
         gamma = 0.7
         self.scheduler = StepLR(self.optimizer, step_size=1, gamma=gamma)
+        self.log_interval = log_interval
+        if tensorboard:
+            current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+            log_dir = os.path.join(
+                'runs_learner', current_time+tensorboard_comment)
+            self.writer = SummaryWriter(log_dir=log_dir)
+        else:
+            self.writer = None
+        self.save(f"model/subenv_{tensorboard_comment}")
+        self.early_stopping = EarlyStopping(save_dir=f"model/subenv_{tensorboard_comment}")
+        self.n_iter = 0
 
     def learn(self, epochs):
         for epoch in range(epochs):
@@ -25,7 +40,6 @@ class Learner:
             self.scheduler.step()
 
     def _train(self, epoch):
-        log_interval = 10
         self.model.train()
         for batch_idx, (data, target) in enumerate(self.train_loader):
             data, target = data.to(self.device), target.to(self.device)
@@ -34,11 +48,15 @@ class Learner:
             loss = F.nll_loss(output, target)
             loss.backward()
             self.optimizer.step()
-            if batch_idx % log_interval == 0:
+            self.n_iter += 1
+            if batch_idx % self.log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx *
                     len(data), len(self.train_loader.dataset),
                     100. * batch_idx / len(self.train_loader), loss.item()))
+                if self.writer is not None:
+                    self.writer.add_scalar("Loss/train", loss.item(), self.n_iter)
+                    self.writer.add_scalar("Accuracy/train", 100. * batch_idx / len(self.train_loader), self.n_iter)
 
     def _test(self):
         self.model.eval()
@@ -57,6 +75,13 @@ class Learner:
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(self.test_loader.dataset),
             100. * correct / len(self.test_loader.dataset)))
+        if self.writer is not None:
+            self.writer.add_scalar("Loss/test", test_loss, self.n_iter)
+            self.writer.add_scalar("Accuracy/test", 100. * correct / len(self.test_loader.dataset), self.n_iter)
+        self.early_stopping(test_loss, self.model)
+        if self.early_stopping.early_stop:
+            print(">> save early stop checkpoint")
+        return test_loss
 
     def save(self, dir_name="./model"):
         Path(dir_name).mkdir(parents=True, exist_ok=True)
