@@ -16,31 +16,39 @@ def weights_gen(base_index=0):
         yield weights
 
 
-def num_model_4_comment_gen():
-    for i in range(0, 8, 2):
-        yield str(i)+"-"+str(i+4)
+# def num_model_4_comment_gen():
+#     for i in range(0, 8, 2):
+#         yield str(i)+"-"+str(i+4)
 
 
 base_index = 3
 alpha = 0.5
 
 if __name__ == "__main__":
-
-    sub_model_parameters = []
-
-    for idx in num_model_4_comment_gen():
-        model = Net()
-        model.load_state_dict(torch.load(f"model/subenv_{idx}/checkpoint.pt"))  # checkpoint using early stopping
-        # model.load_state_dict(torch.load(f"models/subenv_{idx}/mnist_cnn.pt"))  # trained constant step
-        model.eval()
-        sub_model_parameters.append(model.state_dict())
-        del model
+    td, vd = load_and_split_mnist_dataset()
+    num_model_4_comments = [str(i)+"-"+str(i+4) for i in range(0, 8, 2)]
+    base_comment = num_model_4_comments[base_index]
+    model = Net()
+    sub_model_parameters = [model.state_dict() for _ in range(4)]
+    # for idx in num_model_4_comment_gen():
+    #     sub_model = Net()
+        # model = Net()
+        # model.load_state_dict(torch.load(f"model/subenv_{idx}/checkpoint.pt"))  # checkpoint by early stopping
+        # model.eval()
+        # sub_model_parameters.append(model.state_dict())
+        # del model
     # print(sub_model_parameters)
 
-    td, vd = load_and_split_mnist_dataset()
-    model = Net()
     keys = model.state_dict().keys()
     base_parameter_dict = sub_model_parameters[base_index]
+    for i in range(4):
+        tdl = DataLoader(td[i], batch_size=64, shuffle=True, num_workers=4)
+        vdl = DataLoader(vd[i], batch_size=64, shuffle=True, num_workers=4)
+        learner = Learner(tdl, vdl, lr=0.001, log_interval=100)
+        learner.model.load_state_dict(sub_model_parameters[i])
+        learner.learn(1)
+        sub_model_parameters[i] = learner.model.state_dict()
+        del learner
     test_losses = []
     labels = []
     for w in weights_gen(base_index=base_index):
