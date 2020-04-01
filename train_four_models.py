@@ -11,5 +11,5 @@ for i in range(0, 8, 2):
     vdl = DataLoader(vd, batch_size=64, shuffle=True, num_workers=NUM_WORKERS)
     learner = Learner(tdl, vdl, lr=0.005, log_interval=100, tensorboard=True, tensorboard_comment=f"{i}-{i+4}")
     learner.learn(5)
-    learner.save(f"models/subenv_{i}-{i+4}")
+    learner.save(f"model/subenv_{i}-{i+4}")
     
