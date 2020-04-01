@@ -76,9 +76,13 @@ def concat_data(index_list, mode="dataset"):
             result_t += td[i]
             result_v += vd[i]
     elif mode == "tensor":
-        tx, ty, vx, vy = load_and_split_mnist_tensor()
+        tx, _, vx, _ = load_and_split_mnist_tensor()
+        result_t = tx[index_list[0]]
+        result_v = vx[index_list[0]]
+        index_list = index_list[1:]
         for i in index_list:
-            pass  # TODO
+            torch.cat((result_t, tx[i]), dim=0)
+            torch.cat((result_v, vx[i]), dim=0)
     else:
         return None
     return result_t, result_v

@@ -7,10 +7,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from running_mean_std import RunningMeanStd
 from net import target_generator, predictor_generator
+from pytorchtools import EarlyStopping
 
 
 class RandomNetworkDistillation:
-    def __init__(self, log_interval=10, lr=1e-5, use_cuda=False, verbose=0, log_tensorboard=False):
+    def __init__(self, log_interval=10, lr=1e-5, use_cuda=False, verbose=0, log_tensorboard=False, path="rnd_model/",):
         self.predictor = predictor_generator()
         self.target = target_generator()
         for param in self.target.parameters():
@@ -31,6 +32,11 @@ class RandomNetworkDistillation:
         self.verbose = verbose
         self.writer = SummaryWriter() if log_tensorboard else None
         self.n_iter = 0
+
+        self.save_path = path
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        self.early_stopping = EarlyStopping(save_dir=self.save_path)
 
     def set_data(self, train_tensor, test_tensor):
         train_target_tensor = self.target(train_tensor)
@@ -80,6 +86,10 @@ class RandomNetworkDistillation:
             print(f"\nTest set: Average loss: {test_loss:.4f}\n")
         if self.writer is not None:
             self.writer.add_scalar("Loss/test", test_loss, self.n_iter)
+        
+        self.early_stopping(test_loss, self.predictor)
+        if self.early_stopping.early_stop:
+            print(">> save early stop checkpoint")
         return test_loss
 
     def get_intrinsic_reward(self, x: torch.Tensor):
@@ -93,19 +103,12 @@ class RandomNetworkDistillation:
         intrinsic_reward = clip(intrinsic_reward, -5, 5)
         return intrinsic_reward
 
-    def save(self, path="rnd_model/", subfix=None):
-        if not os.path.isdir(path):
-            os.mkdir(path)
-        if subfix is not None:
-            subfix = "_" + subfix
-        else:
-            subfix = ""
+    def save(self):
+        path = self.save_path
         with open("{}/running_stat.pkl".format(path), 'wb') as f:
             pickle.dump(self.running_stats, f)
-        torch.save(self.target.state_dict(),
-                   "{}/target{}.pt".format(path, subfix))
-        torch.save(self.predictor.state_dict(),
-                   "{}/predictor{}.pt".format(path, subfix))
+        torch.save(self.target.state_dict(), "{}/target.pt".format(path))
+        torch.save(self.predictor.state_dict(), "{}/predictor.pt".format(path))
         return
 
     def load(self, path="rnd_model/", subfix=None):
