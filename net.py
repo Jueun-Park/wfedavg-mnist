@@ -30,30 +30,40 @@ class Net(nn.Module):
 
 
 def target_generator(): return torch.nn.Sequential(
-    torch.nn.Conv2d(1, 32, 3),
+    torch.nn.Conv2d(1, 32, 4, 2),
+    torch.nn.BatchNorm2d(32),
     torch.nn.ReLU(),
     torch.nn.Conv2d(32, 64, 3),
+    torch.nn.BatchNorm2d(64),
     torch.nn.ReLU(),
-    torch.nn.MaxPool2d(2),
-    torch.nn.Dropout2d(0.25),
-    torch.nn.Flatten(1, 2),
+    torch.nn.Conv2d(64, 64, 3),
+    torch.nn.BatchNorm2d(64),
+    torch.nn.ReLU(),
+    torch.nn.MaxPool2d(3, 2),
+    torch.nn.Flatten(),
+    torch.nn.Linear(1024, 64),
 )
 
 
 def predictor_generator(): return torch.nn.Sequential(
-    torch.nn.Conv2d(1, 32, 3),
+    torch.nn.Conv2d(1, 32, 4, 2),
+    torch.nn.BatchNorm2d(32),
     torch.nn.ReLU(),
-    torch.nn.Conv2d(32, 64, 3),
+    torch.nn.Conv2d(32, 32, 3),
+    torch.nn.BatchNorm2d(32),
     torch.nn.ReLU(),
-    torch.nn.MaxPool2d(2),
-    torch.nn.Dropout2d(0.25),
-    torch.nn.Flatten(1, 2),
+    torch.nn.Conv2d(32, 32, 3),
+    torch.nn.BatchNorm2d(32),
+    torch.nn.ReLU(),
+    torch.nn.MaxPool2d(3, 2),
+    torch.nn.Flatten(),
+    torch.nn.Linear(512, 64),
 )
 
 
 if __name__ == "__main__":
     target = target_generator()
     predictor = predictor_generator()
-    x = torch.randn((128, 28, 28))
+    x = torch.randn((1, 1, 28, 28))
     print(target(x).shape)
     print(predictor(x).shape)
