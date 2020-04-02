@@ -111,17 +111,17 @@ class RandomNetworkDistillation:
         torch.save(self.predictor.state_dict(), "{}/predictor.pt".format(path))
         return
 
-    def load(self, path="rnd_model/", subfix=None):
-        if subfix is not None:
-            subfix = "_" + subfix
-        else:
-            subfix = ""
+    def load(self, path="rnd_model/", load_checkpoint=False):
         with open("{}/running_stat.pkl".format(path), 'rb') as f:
             self.running_stats = pickle.load(f)
         self.target.load_state_dict(torch.load(
-            "{}/target{}.pt".format(path, subfix), map_location=torch.device(self.device)))
-        self.predictor.load_state_dict(torch.load(
-            "{}/predictor{}.pt".format(path, subfix), map_location=torch.device(self.device)))
+            "{}/target.pt".format(path), map_location=torch.device(self.device)))
+        if load_checkpoint:
+            self.predictor.load_state_dict(torch.load(
+                "{}/checkpoint.pt".format(path), map_location=torch.device(self.device)))
+        else:
+            self.predictor.load_state_dict(torch.load(
+                "{}/predictor.pt".format(path), map_location=torch.device(self.device)))
         return
 
 
