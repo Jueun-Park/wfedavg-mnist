@@ -39,11 +39,11 @@ class RandomNetworkDistillation:
         self.early_stopping = EarlyStopping(save_dir=self.save_path)
 
     def set_data(self, train_tensor, test_tensor):
-        train_target_tensor = self.target(train_tensor)
+        train_target_tensor = self.target(train_tensor.to(self.device))
         train_dataset = TensorDataset(train_tensor, train_target_tensor)
         self.train_loader = DataLoader(train_dataset)
 
-        test_target_tensor = self.target(test_tensor)
+        test_target_tensor = self.target(test_tensor.to(self.device))
         test_dataset = TensorDataset(test_tensor, test_target_tensor)
         self.test_loader = DataLoader(test_dataset)
         return
