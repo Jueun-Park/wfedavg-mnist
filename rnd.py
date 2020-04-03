@@ -4,6 +4,7 @@ import os
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from pathlib import Path
 
 from running_mean_std import RunningMeanStd
 from net import target_generator, predictor_generator
@@ -34,8 +35,8 @@ class RandomNetworkDistillation:
         self.n_iter = 0
 
         self.save_path = path
-        if not os.path.isdir(path):
-            os.mkdir(path)
+        Path(path).mkdir(parents=True, exist_ok=True)
+
         self.early_stopping = EarlyStopping(save_dir=self.save_path)
 
     def set_data(self, train_tensor, test_tensor):
@@ -60,7 +61,7 @@ class RandomNetworkDistillation:
             data, target = data.to(self.device), target.to(self.device)
             output = self.predictor(data)
             loss = self.loss_function(output, target)
-            loss.backward(retain_graph=True)
+            loss.backward()
             self.optimizer.step()
             self.n_iter += 1
             self.running_stats.update(arr=array([loss.item()]))
