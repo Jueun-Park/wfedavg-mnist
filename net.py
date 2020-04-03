@@ -61,9 +61,34 @@ def predictor_generator(): return torch.nn.Sequential(
 )
 
 
+def generator_generator(): return torch.nn.Sequential(
+    torch.nn.Linear(128, 256),
+    torch.nn.ReLU(),
+    torch.nn.Linear(256, 784),
+    torch.nn.Sigmoid(),
+)
+
+def discriminator_generator(): return torch.nn.Sequential(
+    torch.nn.Flatten(),
+    torch.nn.Linear(784, 256),
+    torch.nn.ReLU(),
+    torch.nn.Linear(256, 1),
+    torch.nn.Sigmoid(),
+)
+
 if __name__ == "__main__":
+    batch_size = 32
     target = target_generator()
     predictor = predictor_generator()
-    x = torch.randn((1, 1, 28, 28))
+    generator = generator_generator()
+    discriminator = discriminator_generator()
+    x = torch.randn((batch_size, 1, 28, 28))  # mnist data
+
     print(target(x).shape)
     print(predictor(x).shape)
+
+    noise = torch.randn((batch_size, 128))
+    fake = generator(noise)
+    print(fake.shape)
+    print(fake.reshape([batch_size, 28, 28]).shape)
+    print(discriminator(x).shape)
