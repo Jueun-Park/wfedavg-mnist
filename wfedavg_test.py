@@ -17,7 +17,6 @@ def weights_gen(base_index=0):
         yield weights
 
 
-test_on_base = False
 base_index = 0
 alpha = 0.5
 test_on_full_dataset = False
