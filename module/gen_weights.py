@@ -25,14 +25,27 @@ def weights_gen(result_list, tmp_list=[], w_size=4, grid_size=8, total_weights=1
     return
 
 
-def grid_weights_gen(w_size=4):
+def grid_weights_gen(w_size=4, grid_size=16):
     a = list(range(16))
     permute = permutations(a, w_size-1)
-    print(list(permute))
+    block_size = 1 / grid_size
+    result = []
+    for p in permute:
+        print(p)
+        temp = []
+        tmp = 1
+        for num in p:
+            temp.append(num*block_size)
+            tmp -= num*block_size
+        temp.append(tmp)
+        result.append(temp)
+    return result
+
 
 
 if __name__ == "__main__":
-    grid_weights_gen()
+    li = grid_weights_gen()
+    # print(li)
 
     # result_list = []
     # weights_gen(result_list)
