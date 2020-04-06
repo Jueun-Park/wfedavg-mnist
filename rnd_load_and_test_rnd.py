@@ -1,7 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
-from rnd import RandomNetworkDistillation
-from load_and_split_mnist_dataset import concat_data
+from module.rnd import RandomNetworkDistillation
+from module.load_and_split_mnist_dataset import concat_data
 
 
 if __name__ == "__main__":

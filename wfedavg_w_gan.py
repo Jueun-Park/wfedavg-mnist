@@ -5,10 +5,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import softmax
 
-from load_and_split_mnist_dataset import concat_data
-from net import Net
-from learner import Learner
-from gan import GenerativeAdversarialNetwork
+from module.load_and_split_mnist_dataset import concat_data
+from module.net import Net
+from module.learner import Learner
+from module.gan import GenerativeAdversarialNetwork
 
 
 def weights_gen(base_index=0):

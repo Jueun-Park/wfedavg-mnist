@@ -1,7 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
-from gan import GenerativeAdversarialNetwork
-from load_and_split_mnist_dataset import concat_data
+from module.gan import GenerativeAdversarialNetwork
+from module.load_and_split_mnist_dataset import concat_data
 
 
 if __name__ == "__main__":

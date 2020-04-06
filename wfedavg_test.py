@@ -4,9 +4,9 @@ from torchvision import datasets, transforms
 import numpy as np
 import matplotlib.pyplot as plt
 
-from load_and_split_mnist_dataset import load_and_split_mnist_dataset
-from net import Net
-from learner import Learner
+from module.load_and_split_mnist_dataset import load_and_split_mnist_dataset
+from module.net import Net
+from module.learner import Learner
 
 
 def weights_gen(base_index=0):

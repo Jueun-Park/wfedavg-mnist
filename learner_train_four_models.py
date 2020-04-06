@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
-from learner import Learner
-from load_and_split_mnist_dataset import concat_data
+from module.learner import Learner
+from module.load_and_split_mnist_dataset import concat_data
 
 
 NUM_WORKERS = 4

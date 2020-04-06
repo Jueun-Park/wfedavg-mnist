@@ -1,9 +1,9 @@
 import torch
 from torch.utils.data import DataLoader
 
-from learner import Learner
-from load_and_split_mnist_dataset import load_and_split_mnist_tensor
-from rnd import RandomNetworkDistillation
+from module.learner import Learner
+from module.load_and_split_mnist_dataset import load_and_split_mnist_tensor
+from module.rnd import RandomNetworkDistillation
 
 
 epochs = 25

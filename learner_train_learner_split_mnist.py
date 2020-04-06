@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
-from learner import Learner
-from load_and_split_mnist_dataset import load_and_split_mnist_dataset
+from module.learner import Learner
+from module.load_and_split_mnist_dataset import load_and_split_mnist_dataset
 
 if __name__ == "__main__":
     use_cuda = False

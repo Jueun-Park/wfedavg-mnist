@@ -1,5 +1,5 @@
-from rnd import RandomNetworkDistillation
-from load_and_split_mnist_dataset import concat_data
+from module.rnd import RandomNetworkDistillation
+from module.load_and_split_mnist_dataset import concat_data
 
 NUM_WORKERS = 4
 epochs = 100
