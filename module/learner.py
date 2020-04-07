@@ -15,11 +15,12 @@ from net import Net
 
 
 class Learner:
-    def __init__(self, train_loader, test_loader, lr=1.0, device="cpu", log_interval=10, tensorboard=False, tensorboard_comment=""):
+    def __init__(self, train_loader, test_loader, lr=1.0, use_cuda=False, log_interval=10, tensorboard=False, tensorboard_comment=""):
         self.model = Net()
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.device = device
+        self.device = torch.device('cuda' if use_cuda else 'cpu')
+        self.model = self.model.to(self.device)
         self.optimizer = optim.Adadelta(self.model.parameters(), lr=lr)
         gamma = 0.7
         self.scheduler = StepLR(self.optimizer, step_size=1, gamma=gamma)
@@ -62,6 +63,7 @@ class Learner:
 
     def _test(self):
         self.model.eval()
+        self.model.to(self.device)
         test_loss = 0
         correct = 0
         with torch.no_grad():

@@ -26,8 +26,7 @@ def model_align(w, base_parameter_dict, sub_model_parameters, alpha=0.5):
 weights = grid_weights_gen()
 base_idx = 0
 alpha = 0.5
-device = "cpu"
-# device = "cuda"
+use_cuda = True
 
 if __name__ == "__main__":
     num_model_4_indices = [list(range(10))[i:i+4] for i in range(0, 8, 2)]
@@ -57,7 +56,7 @@ if __name__ == "__main__":
         # client model align
         learner = Learner(DataLoader(base_train_ds, batch_size=64),
                         DataLoader(base_valid_ds, batch_size=64),
-                        device=device)
+                        use_cuda=use_cuda)
         base_parameter_dict = base_model.state_dict()
         model_align(w, base_parameter_dict, sub_model_parameters, alpha=alpha)
         aligned_model.load_state_dict(base_parameter_dict)
