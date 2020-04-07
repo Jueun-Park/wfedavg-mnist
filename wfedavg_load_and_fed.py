@@ -24,7 +24,7 @@ def model_align(w, base_parameter_dict, sub_model_parameters, alpha=0.5):
 
 # configure
 weights = grid_weights_gen()
-base_idx = 0
+base_idx = 3
 alpha = 0.5
 use_cuda = True
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     sub_model_parameters = []
     for i in range(4):
         net = Net()
-        net.load_state_dict(torch.load(f"./wfed_model/subenv_{num_model_4_comments[i]}/mnist_cnn.pt"))
+        net.load_state_dict(torch.load(f"./wfed_model_base{base_idx}/subenv_{num_model_4_comments[i]}/mnist_cnn.pt"))
         sub_model_parameters.append(net.state_dict())
         del net
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             print(f"w test in progressing {i}/{len(weights)}")
     
     Path("log").mkdir(parents=True, exist_ok=True)
-    with open("log/wfedavg_log.csv", "w", newline="") as f:
+    with open(f"log/wfedavg_log_base{base_idx}.csv", "w", newline="") as f:
         wf = csv.writer(f)
         wf.writerow(labels)
         wf.writerow(test_losses)
