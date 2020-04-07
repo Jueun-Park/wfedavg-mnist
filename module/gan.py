@@ -2,6 +2,9 @@ import torch
 from torch.utils.data import DataLoader
 from pathlib import Path
 
+from os import path
+import sys
+sys.path.append(path.abspath(path.dirname(__file__)))
 from net import generator_generator, discriminator_generator
 
 

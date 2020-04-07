@@ -3,6 +3,9 @@ import torch
 from torchvision import datasets, transforms
 from torch.utils.data import TensorDataset, DataLoader, Subset, Dataset
 
+from os import path
+import sys
+sys.path.append(path.abspath(path.dirname(__file__)))
 from learner import Learner
 
 

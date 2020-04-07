@@ -6,9 +6,11 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.tensorboard import SummaryWriter
+
+from os import path
+import sys
+sys.path.append(path.abspath(path.dirname(__file__)))
 from pytorchtools import EarlyStopping
-
-
 from net import Net
 
 
@@ -29,8 +31,8 @@ class Learner:
             self.writer = SummaryWriter(log_dir=log_dir)
         else:
             self.writer = None
-        self.save(f"model/subenv_{tensorboard_comment}")
-        self.early_stopping = EarlyStopping(save_dir=f"model/subenv_{tensorboard_comment}")
+        # self.save(f"model/subenv_{tensorboard_comment}")
+        # self.early_stopping = EarlyStopping(save_dir=f"model/subenv_{tensorboard_comment}")
         self.n_iter = 0
 
     def learn(self, epochs):
@@ -78,9 +80,9 @@ class Learner:
         if self.writer is not None:
             self.writer.add_scalar("Loss/test", test_loss, self.n_iter)
             self.writer.add_scalar("Accuracy/test", 100. * correct / len(self.test_loader.dataset), self.n_iter)
-        self.early_stopping(test_loss, self.model)
-        if self.early_stopping.early_stop:
-            print(">> save early stop checkpoint")
+        # self.early_stopping(test_loss, self.model)
+        # if self.early_stopping.early_stop:
+        #     print(">> save early stop checkpoint")
         return test_loss
 
     def save(self, dir_name="./model"):
