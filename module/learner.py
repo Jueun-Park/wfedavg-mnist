@@ -59,7 +59,6 @@ class Learner:
                     100. * batch_idx / len(self.train_loader), loss.item()))
                 if self.writer is not None:
                     self.writer.add_scalar("Loss/train", loss.item(), self.n_iter)
-                    self.writer.add_scalar("Accuracy/train", 100. * batch_idx / len(self.train_loader), self.n_iter)
 
     def _test(self):
         self.model.eval()
