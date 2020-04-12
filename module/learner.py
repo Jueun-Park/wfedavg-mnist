@@ -75,17 +75,17 @@ class Learner:
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(self.test_loader.dataset)
-
+        accuracy = 100. * correct / len(self.test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(self.test_loader.dataset),
-            100. * correct / len(self.test_loader.dataset)))
+            accuracy))
         if self.writer is not None:
             self.writer.add_scalar("Loss/test", test_loss, self.n_iter)
-            self.writer.add_scalar("Accuracy/test", 100. * correct / len(self.test_loader.dataset), self.n_iter)
+            self.writer.add_scalar("Accuracy/test", accuracy, self.n_iter)
         # self.early_stopping(test_loss, self.model)
         # if self.early_stopping.early_stop:
         #     print(">> save early stop checkpoint")
-        return test_loss
+        return test_loss, accuracy
 
     def save(self, dir_name="./model"):
         Path(dir_name).mkdir(parents=True, exist_ok=True)

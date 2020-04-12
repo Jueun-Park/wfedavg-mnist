@@ -50,6 +50,7 @@ if __name__ == "__main__":
         num_model_4_indices[base_idx], mode="dataset")
 
     test_losses = []
+    accuracies = []
     labels = []
     aligned_model = Net()
     for i, w in enumerate(weights):
@@ -64,7 +65,9 @@ if __name__ == "__main__":
         # evaluate fedavg model
         aligned_model.eval()
         learner.model = aligned_model
-        test_losses.append(learner._test())
+        test_loss, accuracy = learner._test()
+        test_losses.append(test_loss)
+        accuracies.append(accuracy)
         labels.append(f"{w}")
         del base_parameter_dict, learner
 
@@ -75,4 +78,4 @@ if __name__ == "__main__":
     with open(f"log/wfedavg_log_base{base_idx}.csv", "w", newline="") as f:
         wf = csv.writer(f)
         wf.writerow(labels)
-        wf.writerow(test_losses)
+        wf.writerow(accuracies)
