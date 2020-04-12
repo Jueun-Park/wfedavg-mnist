@@ -1,3 +1,4 @@
+import argparse
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -11,6 +12,17 @@ from module.learner import Learner
 from module.gen_weights import grid_weights_gen
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--base-index", type=int)
+args = parser.parse_args()
+base_idx = args.base_index
+
+# configure
+weights = grid_weights_gen()
+alpha = 0.8
+use_cuda = True
+
+
 def model_align(w, base_parameter_dict, sub_model_parameters, alpha=0.5):
     keys = base_parameter_dict.keys()
     for key in keys:
@@ -22,11 +34,6 @@ def model_align(w, base_parameter_dict, sub_model_parameters, alpha=0.5):
         base_parameter_dict[key] = (
             1-alpha) * base_parameter_dict[key] + alpha*delta
 
-# configure
-weights = grid_weights_gen()
-base_idx = 3
-alpha = 0.5
-use_cuda = True
 
 if __name__ == "__main__":
     num_model_4_indices = [list(range(10))[i:i+4] for i in range(0, 8, 2)]
@@ -71,10 +78,11 @@ if __name__ == "__main__":
         del base_parameter_dict, learner
 
         if i % 10 == 0:
-            print(f"w test in progressing {i}/{len(weights)}")
+            print(f"Base index: {base_idx}, w test in progressing {i}/{len(weights)}")
     
     Path("log").mkdir(parents=True, exist_ok=True)
     with open(f"log/wfedavg_log_base{base_idx}.csv", "w", newline="") as f:
         wf = csv.writer(f)
         wf.writerow(labels)
+        wf.writerow(test_losses)
         wf.writerow(accuracies)
