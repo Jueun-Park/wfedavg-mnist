@@ -1,3 +1,4 @@
+import argparse
 import torch
 from torch.utils.data import DataLoader
 
@@ -6,10 +7,15 @@ from module.learner import Learner
 from module.load_and_split_mnist_dataset import concat_data
 
 
-base_idx = 3
+parser = argparse.ArgumentParser()
+parser.add_argument("--base-index", type=int)
+args = parser.parse_args()
+base_idx = args.base_index
+
 use_cuda = True
 
 if __name__ == "__main__":
+    print(f"Base index: {base_idx}")
     num_model_4_indices = [list(range(10))[i:i+4] for i in range(0, 8, 2)]
     num_model_4_comments = [str(i)+"-"+str(i+4) for i in range(0, 8, 2)]
     # load base model parameter
@@ -20,6 +26,7 @@ if __name__ == "__main__":
 
     # client training
     for i, data_idx in enumerate(num_model_4_indices):
+        print(f"data index: {data_idx}")
         td, vd = concat_data(data_idx, mode="dataset")
         tdl = DataLoader(td, batch_size=64, shuffle=True)
         vdl = DataLoader(vd, batch_size=64, shuffle=True)
