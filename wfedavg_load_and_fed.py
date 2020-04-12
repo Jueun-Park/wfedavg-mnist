@@ -37,7 +37,6 @@ if __name__ == "__main__":
     base_model.load_state_dict(torch.load(
         f"model/subenv_{num_model_4_comments[base_idx]}/mnist_cnn.pt"))
     
-    num_model_4_comments = [str(i)+"-"+str(i+4) for i in range(0, 8, 2)]
     sub_model_parameters = []
     for i in range(4):
         net = Net()
