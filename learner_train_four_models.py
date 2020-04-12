@@ -13,6 +13,7 @@ for i, index in enumerate(num_model_4_indices):
     vdl = DataLoader(vd, batch_size=64, shuffle=True, num_workers=NUM_WORKERS)
     learner = Learner(tdl, vdl, lr=0.005, log_interval=100,
                       tensorboard=True, tensorboard_comment=num_model_4_comments[i])
-    learner.learn(10)
+    learner.learn(1)
     learner.save(f"model/subenv_{num_model_4_comments[i]}")
     print(f"save subenv_{num_model_4_comments[i]}")
+    del learner
