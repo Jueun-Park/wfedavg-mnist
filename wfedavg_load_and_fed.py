@@ -10,6 +10,7 @@ from module.load_and_split_mnist_dataset import concat_data
 from module.net import Net
 from module.learner import Learner
 from module.gen_weights import grid_weights_gen
+from info import model_comments, model_indices, num_models
 
 
 parser = argparse.ArgumentParser()
@@ -18,7 +19,7 @@ args = parser.parse_args()
 base_idx = args.base_index
 
 # configure
-weights = grid_weights_gen()
+weights = grid_weights_gen(w_size=num_models)
 alpha = 0.8
 use_cuda = True
 
@@ -27,7 +28,7 @@ def model_align(w, base_parameter_dict, sub_model_parameters, alpha=0.5):
     keys = base_parameter_dict.keys()
     for key in keys:
         layer_parameter = []
-        for i in range(4):
+        for i in range(num_models):
             layer_parameter.append(sub_model_parameters[i][key].numpy())
         # weighted average
         delta = np.average(layer_parameter, axis=0, weights=w)
@@ -36,24 +37,21 @@ def model_align(w, base_parameter_dict, sub_model_parameters, alpha=0.5):
 
 
 if __name__ == "__main__":
-    num_model_4_indices = [list(range(10))[i:i+4] for i in range(0, 8, 2)]
-    num_model_4_comments = [str(i)+"-"+str(i+4) for i in range(0, 8, 2)]
-
     base_model = Net()
 
     base_model.load_state_dict(torch.load(
-        f"model/subenv_{num_model_4_comments[base_idx]}/mnist_cnn.pt"))
+        f"model/subenv_{model_comments[base_idx]}/mnist_cnn.pt"))
     
     sub_model_parameters = []
-    for i in range(4):
+    for i in range(num_models):
         net = Net()
-        net.load_state_dict(torch.load(f"./wfed_model_base{base_idx}/subenv_{num_model_4_comments[i]}/mnist_cnn.pt"))
+        net.load_state_dict(torch.load(f"./wfed_model_base{base_idx}/subenv_{model_comments[i]}/mnist_cnn.pt"))
         sub_model_parameters.append(net.state_dict())
         del net
 
     # load base subenv dataset
     base_train_ds, base_valid_ds = concat_data(
-        num_model_4_indices[base_idx], mode="dataset")
+        model_indices[base_idx], mode="dataset")
 
     test_losses = []
     accuracies = []
