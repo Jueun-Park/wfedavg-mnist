@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from module.net import Net
 from module.learner import Learner
 from module.load_and_split_mnist_dataset import concat_data
-from info import model_indices, model_comments, num_models, base_learn_times
+from info import model_indices, model_comments, num_models, fed_learn_epochs
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base-index", type=int)
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         vdl = DataLoader(vd, batch_size=64, shuffle=True)
         learner = Learner(tdl, vdl, lr=0.001, log_interval=100, use_cuda=use_cuda)
         learner.model.load_state_dict(sub_model_parameters[i])
-        learner.learn(base_learn_times)
+        learner.learn(fed_learn_epochs)
         sub_model_parameters[i] = learner.model.state_dict()
         learner.save(f"./wfed_model_base{base_idx}/subenv_{model_comments[i]}")
         del learner

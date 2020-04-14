@@ -10,7 +10,7 @@ from module.load_and_split_mnist_dataset import concat_data
 from module.net import Net
 from module.learner import Learner
 from module.gen_weights import grid_weights_gen
-from info import model_comments, model_indices, num_models
+from info import model_comments, model_indices, num_models, grid_size
 
 
 parser = argparse.ArgumentParser()
@@ -19,7 +19,7 @@ args = parser.parse_args()
 base_idx = args.base_index
 
 # configure
-weights = grid_weights_gen(w_size=num_models)
+weights = grid_weights_gen(w_size=num_models, grid_size=grid_size)
 alpha = 0.8
 use_cuda = True
 

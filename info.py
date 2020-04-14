@@ -7,5 +7,6 @@ model_indices = num_model_5_indices
 model_comments = num_model_5_comments
 
 num_models = 5
-base_learn_times = 5
-fed_learn_times = 1
+base_learn_epochs = 5
+fed_learn_epochs = 1
+grid_size = 8
