@@ -16,11 +16,14 @@ if __name__ == "__main__":
     num_model_5_comments = [str(i)+"-"+str(i+4) for i in range(0, 8, 2)] + ["8-2"]
     num_model_4_comments = [str(i)+"-"+str(i+4) for i in range(0, 8, 2)]
 
+    model_indices = num_model_5_indices
+    model_comments = num_model_5_comments
+
     Path("log").mkdir(parents=True, exist_ok=True)
     file = open("log/simple_agent_test.csv", "w", newline="")
     writer = csv.writer(file)
-    writer.writerow(["sub_data"] + num_model_4_comments)
-    for model_name in num_model_4_comments:
+    writer.writerow(["sub_data"] + model_comments)
+    for model_name in model_comments:
         print(model_name)
         model = Net()
         model.load_state_dict(torch.load(
@@ -28,7 +31,7 @@ if __name__ == "__main__":
 
         losses = []
         accuracies = []
-        for data_idx in num_model_4_indices:
+        for data_idx in model_indices:
             print(data_idx)
             td, vd = concat_data(data_idx, mode="dataset")
             tdl = DataLoader(td, batch_size=64, shuffle=True)
